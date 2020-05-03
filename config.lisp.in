@@ -1,0 +1,12 @@
+(defpackage cl-gas-nippo/config
+  (:use :cl
+        :parenscript
+        :ps-experiment)
+  (:export :get-config-list))
+(in-package :cl-gas-nippo/config)
+
+(defvar.ps+ *config-list*
+    '((:spreadsheet-id "XXXX")))
+
+(defun.ps+ get-config-list ()
+  *config-list*)
