@@ -2,11 +2,30 @@
   (:use :cl
         :parenscript
         :ps-experiment)
-  (:export :get-config-list))
+  (:export :get-config-list
+           :get-body-template))
 (in-package :cl-gas-nippo/config)
 
 (defvar.ps+ *config-list*
-    '((:spreadsheet-id "XXXX")))
+    '((:spreadsheet-id "XXXX")
+      (:to "to-example@example.com")
+      (:cc "cc-example@example.com")
+      (:bcc "bcc-example@example.com")
+      (:title "【日報】hoge_{date}")))
+
+(defvar.ps+ *body-template* "お疲れ様です、hoge です。
+本日の日報です。
+
+{content}
+
+以上です。よろしくお願いします。
+
+--- <署名> ---")
+
+;; --- DO NOT EDIT the followings --- ;;
 
 (defun.ps+ get-config-list ()
   *config-list*)
+
+(defun.ps+ get-body-template ()
+  *body-template*)
