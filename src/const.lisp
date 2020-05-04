@@ -2,9 +2,24 @@
   (:use :cl
         :ps-experiment
         :parenscript)
-  (:export :nippo-sheet-name
-           :nippo-log-sheet-name))
+  (:export :get-const))
 (in-package :cl-gas-nippo/src/const)
 
-(defun.ps+ nippo-sheet-name () "日報用")
-(defun.ps+ nippo-log-sheet-name () "日報ログ")
+(defvar.ps+ *const-table*
+    (let ((res (make-hash-table))
+          (lst '((:sheet-name-nippo "日報用")
+                 (:sheet-name-nippo-log "日報ログ")
+                 (:column-name-date "Date")
+                 (:column-name-category "Category")
+                 (:column-name-content "Content")
+                 (:category-do "やること"))))
+      (dolist (pair lst)
+        (setf (gethash (car pair) res)
+              (cadr pair)))
+      res))
+
+(defun.ps+ get-const (name)
+  (let ((res (gethash name *const-table*)))
+    (unless res
+      (error "Constant value \"~S\" is not defined" name))
+    res))

@@ -5,6 +5,8 @@
   (:export :make-nippo)
   (:import-from :cl-gas-nippo/config
                 :get-body-template)
+  (:import-from :cl-gas-nippo/src/nippo-content
+                :make-content)
   (:import-from :cl-gas-nippo/src/utils/config
                 :get-value)
   (:import-from :cl-gas-nippo/src/utils/date
@@ -13,10 +15,11 @@
 (in-package :cl-gas-nippo/src/nippo)
 
 (defun.ps make-nippo ()
-  (let* ((today-string (date-to-string (now)))
+  (let* ((now (now))
+         (today-string (date-to-string now))
          (title (chain (get-value :title)
                        (replace "{date}" today-string)))
-         (content "hoge")
+         (content (make-content now))
          (body (chain (get-body-template)
                       (replace "{content}" content)))
          (opts (make-hash-table))

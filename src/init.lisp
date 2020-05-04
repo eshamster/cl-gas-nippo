@@ -4,8 +4,7 @@
         :parenscript)
   (:export :init)
   (:import-from :cl-gas-nippo/src/const
-                :nippo-sheet-name
-                :nippo-log-sheet-name)
+                :get-const)
   (:import-from :cl-gas-nippo/src/utils/sheet
                 :get-or-create-sheet
                 :get-spreadhsheet))
@@ -14,11 +13,11 @@
 (defun.ps+ init ()
   (let ((ss (get-spreadhsheet)))
     (multiple-value-bind (sheet existing-p)
-        (get-or-create-sheet ss (nippo-log-sheet-name))
+        (get-or-create-sheet ss (get-const :sheet-name-nippo-log))
       (unless existing-p
         (init-nippo-log-sheet sheet)))
     (multiple-value-bind (sheet existing-p)
-        (get-or-create-sheet ss (nippo-sheet-name))
+        (get-or-create-sheet ss (get-const :sheet-name-nippo))
       (unless existing-p
         (init-nippo-sheet sheet)))))
 
@@ -30,4 +29,6 @@
 
 (defun.ps init-nippo-sheet-header (sheet)
   (chain (sheet.get-range "A1:C1")
-         (set-values '(("Date" "Catergory" "Content")))))
+         (set-values (list (list (get-const :column-name-date)
+                                 (get-const :column-name-category)
+                                 (get-const :column-name-content))))))
