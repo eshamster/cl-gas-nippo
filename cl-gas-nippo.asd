@@ -17,6 +17,7 @@
   :license "MIT"
   :depends-on (:parenscript
                :ps-experiment
+               :alexandria
                :split-sequence
                :cl-gas-nippo/main)
   :description "Google App Script to create nippo"

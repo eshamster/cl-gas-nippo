@@ -5,6 +5,10 @@
   (:export :make-content)
   (:import-from :cl-gas-nippo/src/const
                 :get-const)
+  (:import-from :cl-gas-nippo/src/utils/config
+                :check-if-other-category
+                :get-title-of-category
+                :do-other-category)
   (:import-from :cl-gas-nippo/src/utils/date
                 :date-to-string
                 :get-today-date
@@ -32,6 +36,7 @@
          (last-row (sheet.get-last-row))
          (today-contents (list))
          (next-contents (list))
+         (other-contents-table (make-hash-table))
          (today (get-today-date))
          (next-date nil))
     (loop :for row :from 2 :to last-row :do
@@ -50,10 +55,22 @@
                       (today-contents.push content-val))
                      ((and next-date (date= date-val next-date))
                       (next-contents.push content-val)))
-               (error "not implemented"))))
+               (when (date= date-val today)
+                 (check-if-other-category category-val)
+                 (let ((lst (gethash category-val other-contents-table)))
+                   (unless lst (setf lst (list)))
+                   (lst.push content-val)
+                   (setf (gethash category-val other-contents-table) lst))))))
     (let ((today-content-text (format-content "やったこと" today-contents))
-          (next-content-text (format-content "次にすること" next-contents)))
-      (+ today-content-text next-content-text))))
+          (next-content-text (format-content "次にすること" next-contents))
+          (other-text ""))
+      (do-other-category (c)
+        (let ((contents (gethash c other-contents-table)))
+          (when contents
+            (setf other-text
+                  (+ other-text (format-content
+                                 (get-title-of-category c) contents))))))
+      (+ today-content-text next-content-text other-text))))
 
 (defun.ps format-content (title contents)
   (when (= contents.length 0)

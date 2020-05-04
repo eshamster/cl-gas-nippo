@@ -11,7 +11,11 @@
       (:to "to-example@example.com")
       (:cc "cc-example@example.com")
       (:bcc "bcc-example@example.com")
-      (:title "【日報】hoge_{date}")))
+      (:title "【日報】hoge_{date}")
+      (:other-categories '((:category "ありがとう" :title "ありがとう")
+                           (:category "keep" :title "Keep")
+                           (:category "problem" :title "Problem")
+                           (:category "other" :title "その他")))))
 
 (defvar.ps+ *body-template* "お疲れ様です、hoge です。
 本日の日報です。
