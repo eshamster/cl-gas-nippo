@@ -5,7 +5,8 @@
   (:export :get-sheet
            :get-or-create-sheet
            :get-spreadhsheet
-           :get-column-index-by-name)
+           :get-column-index-by-name
+           :get-value-at)
   (:import-from :cl-gas-nippo/src/utils/config
                 :get-value))
 (in-package :cl-gas-nippo/src/utils/sheet)
@@ -36,3 +37,7 @@
                          (get-values)
                          (shift))))
     (1+ (headers.index-of column-name))))
+
+(defun.ps get-value-at (sheet row column)
+  (chain (sheet.get-range row column)
+         (get-value)))

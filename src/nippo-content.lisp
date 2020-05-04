@@ -3,6 +3,8 @@
         :ps-experiment
         :parenscript)
   (:export :make-content)
+  (:import-from :cl-gas-nippo/src/aggregate
+                :aggregate)
   (:import-from :cl-gas-nippo/src/const
                 :get-const)
   (:import-from :cl-gas-nippo/src/utils/config
@@ -17,7 +19,8 @@
   (:import-from :cl-gas-nippo/src/utils/sheet
                 :get-spreadhsheet
                 :get-sheet
-                :get-column-index-by-name))
+                :get-column-index-by-name
+                :get-value-at))
 (in-package :cl-gas-nippo/src/nippo-content)
 
 ;; The followings are assumed.
@@ -41,12 +44,9 @@
          (next-date nil))
     (loop :for row :from 2 :to last-row :do
          ;; TODO: Don't read category and content if not required.
-         (let ((date-val (chain (sheet.get-range row date-index)
-                                (get-value)))
-               (category-val (chain (sheet.get-range row category-index)
-                                    (get-value)))
-               (content-val (chain (sheet.get-range row content-index)
-                                   (get-value))))
+         (let ((date-val (get-value-at sheet row date-index))
+               (category-val (get-value-at sheet row category-index))
+               (content-val (get-value-at sheet row content-index)))
            (when (and (date> date-val today)
                       (null next-date))
              (setf next-date date-val))
@@ -61,6 +61,7 @@
                    (unless lst (setf lst (list)))
                    (lst.push content-val)
                    (setf (gethash category-val other-contents-table) lst))))))
+    (aggregate today today-contents next-contents)
     (let ((today-content-text (format-content "やったこと" today-contents))
           (next-content-text (format-content "次にすること" next-contents))
           (other-text ""))
