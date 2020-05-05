@@ -20,7 +20,8 @@
                 :get-spreadhsheet
                 :get-sheet
                 :get-column-index-by-name
-                :get-value-at))
+                :get-value-at
+                :do-sheet-row-rev))
 (in-package :cl-gas-nippo/src/nippo-content)
 
 ;; The followings are assumed.
@@ -40,27 +41,25 @@
          (today-contents (list))
          (next-contents (list))
          (other-contents-table (make-hash-table))
-         (today (get-today-date))
-         (next-date nil))
-    (loop :for row :from 2 :to last-row :do
-         ;; TODO: Don't read category and content if not required.
-         (let ((date-val (get-value-at sheet row date-index))
-               (category-val (get-value-at sheet row category-index))
-               (content-val (get-value-at sheet row content-index)))
-           (when (and (date> date-val today)
-                      (null next-date))
-             (setf next-date date-val))
-           (if (string= category-val (get-const :category-do))
-               (cond ((date= date-val today)
-                      (today-contents.push content-val))
-                     ((and next-date (date= date-val next-date))
-                      (next-contents.push content-val)))
-               (when (date= date-val today)
-                 (check-if-other-category category-val)
-                 (let ((lst (gethash category-val other-contents-table)))
-                   (unless lst (setf lst (list)))
-                   (lst.push content-val)
-                   (setf (gethash category-val other-contents-table) lst))))))
+         (today (get-today-date)))
+    (multiple-value-bind (start-row end-row)
+        (find-today-and-next-rows sheet today date-index)
+      (loop :for row :from start-row :to end-row :do
+           (let ((date-val (get-value-at sheet row date-index))
+                 (category-val (get-value-at sheet row category-index))
+                 (content-val (get-value-at sheet row content-index)))
+             (if (string= category-val (get-const :category-do))
+                 (cond ((date= date-val today)
+                        (today-contents.push content-val))
+                       ;; Note: Range from start-row to end-row includes only today and next date.
+                       ;; So if a date is not today, it is next date.
+                       (t (next-contents.push content-val)))
+                 (when (date= date-val today)
+                   (check-if-other-category category-val)
+                   (let ((lst (gethash category-val other-contents-table)))
+                     (unless lst (setf lst (list)))
+                     (lst.push content-val)
+                     (setf (gethash category-val other-contents-table) lst)))))))
     (let ((today-content-text (format-content "やったこと" today-contents))
           (next-content-text (format-content "次にすること" next-contents))
           (aggregate-text (format-content "集計" (aggregate today today-contents next-contents)))
@@ -72,6 +71,24 @@
                   (+ other-text (format-content
                                  (get-title-of-category c) contents))))))
       (+ aggregate-text today-content-text next-content-text other-text))))
+
+(defun.ps find-today-and-next-rows (sheet today-date date-index)
+  (let (start-row end-row next-date)
+    (do-sheet-row-rev (row sheet)
+      (let ((date-val (get-value-at sheet row date-index)))
+        (unless next-date
+          (setf next-date date-val
+                start-row row
+                end-row row))
+        (when (date> today-date date-val)
+          (return))
+        (cond ((date= today-date date-val)
+               (setf start-row row))
+              ((date> next-date date-val)
+               (setf next-date date-val
+                     end-row row))
+              (t (setf start-row row)))))
+    (values start-row end-row)))
 
 (defun.ps format-content (title contents)
   (when (= contents.length 0)
