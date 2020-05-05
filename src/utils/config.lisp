@@ -8,6 +8,8 @@
            :do-other-category)
   (:import-from :cl-gas-nippo/config
                 :get-config-list)
+  (:import-from :cl-gas-nippo/src/const
+                :get-const)
   (:import-from :alexandria
                 :with-gensyms))
 (in-package :cl-gas-nippo/src/utils/config)
@@ -33,9 +35,17 @@ Note: Hold as list instead of as hash-table to keep order")
     (setf *config-table* table)
     (let ((categories (gethash :other-categories table)))
       (when categories
+        (check-other-category categories)
         (setf *other-categories* categories)))))
 
 ;; --- other categories --- ;;
+
+(defun.ps+ check-other-category (categories)
+  (dolist (c categories)
+    (let* ((name (getf c :category))
+           (found (find name (list (get-const :category-do)))))
+      (when found
+        (error "The category \"~S\" is not allowed as an other category because it is defined as a default category" found)))))
 
 (defun.ps+ get-other-categories ()
   *other-categories*)
