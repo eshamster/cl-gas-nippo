@@ -7,7 +7,9 @@
            :get-date
            :get-today-date
            :date=
-           :date>))
+           :date>
+           :date-month=
+           :date-month>))
 (in-package :cl-gas-nippo/src/utils/date)
 
 (defun.ps now ()
@@ -32,3 +34,12 @@
 
 (defun.ps date> (date1 date2)
   (> (date1.get-time) (date2.get-time)))
+
+(defun.ps date-month= (date1 date2)
+  (and (= (date1.get-year) (date2.get-year))
+       (= (date1.get-month) (date2.get-month))))
+
+(defun.ps date-month> (date1 date2)
+  (or (> (date1.get-year) (date2.get-year))
+      (and (= (date1.get-year) (date2.get-year))
+           (> (date1.get-month) (date2.get-month)))))

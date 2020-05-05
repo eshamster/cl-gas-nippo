@@ -6,9 +6,12 @@
            :get-or-create-sheet
            :get-spreadhsheet
            :get-column-index-by-name
-           :get-value-at)
+           :get-value-at
+           :do-sheet-row-rev)
   (:import-from :cl-gas-nippo/src/utils/config
-                :get-value))
+                :get-value)
+  (:import-from :alexandria
+                :with-gensyms))
 (in-package :cl-gas-nippo/src/utils/sheet)
 
 (defvar.ps+ *spreadsheet* nil)
@@ -41,3 +44,9 @@
 (defun.ps get-value-at (sheet row column)
   (chain (sheet.get-range row column)
          (get-value)))
+
+(defmacro.ps+ do-sheet-row-rev ((var sheet) &body body)
+  (with-gensyms (last-row)
+    `(let ((,last-row ((@ ,sheet get-last-row))))
+       (loop :for ,var :from ,last-row :downto 2 :do
+            ,@body))))

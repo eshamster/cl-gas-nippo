@@ -61,9 +61,9 @@
                    (unless lst (setf lst (list)))
                    (lst.push content-val)
                    (setf (gethash category-val other-contents-table) lst))))))
-    (aggregate today today-contents next-contents)
     (let ((today-content-text (format-content "やったこと" today-contents))
           (next-content-text (format-content "次にすること" next-contents))
+          (aggregate-text (format-content "集計" (aggregate today today-contents next-contents)))
           (other-text ""))
       (do-other-category (c)
         (let ((contents (gethash c other-contents-table)))
@@ -71,7 +71,7 @@
             (setf other-text
                   (+ other-text (format-content
                                  (get-title-of-category c) contents))))))
-      (+ today-content-text next-content-text other-text))))
+      (+ aggregate-text today-content-text next-content-text other-text))))
 
 (defun.ps format-content (title contents)
   (when (= contents.length 0)
