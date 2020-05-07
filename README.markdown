@@ -31,9 +31,9 @@ At first, [Roswell](https://github.com/roswell/roswell) and [npm](https://www.np
    $ cp config.lisp.in config.lisp
    ```
 6. Compile to a JavaScript file and push by clasp
-  ```sh
-  $ make push-new
-  ```
+   ```sh
+   $ make push-new
+   ```
 
 ## Author
 
