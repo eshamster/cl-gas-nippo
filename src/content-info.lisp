@@ -6,7 +6,8 @@
            :find-category-info
            :do-subcategory
            :category-info-contents
-           :push-content-row)
+           :push-content-row
+           :category-info)
   (:import-from :alexandria
                 :with-gensyms))
 (in-package :cl-gas-nippo/src/content-info)
@@ -45,9 +46,10 @@
 
 (defun.ps+ category-info-contents (category-info)
   (let ((result (list)))
-    (dolist (subc-info (category-info-subcategory-info-list category-info))
+    (dolist (subc-info (reverse (category-info-subcategory-info-list category-info)))
       (setf result
-            (append result (subcategory-info-contents subc-info))))))
+            (append result (reverse (subcategory-info-contents subc-info)))))
+    result))
 
 (defmacro.ps+ do-subcategory (((var-name var-contents) category-info) &body body)
   (with-gensyms (subc-info)

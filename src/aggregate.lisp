@@ -7,6 +7,10 @@
                 :get-const)
   (:import-from :cl-gas-nippo/config
                 :get-config)
+  (:import-from :cl-gas-nippo/src/content-info
+                :category-info
+                :category-info-contents
+                :do-subcategory)
   (:import-from :cl-gas-nippo/src/utils/config
                 :do-other-category
                 :get-title-of-category)
@@ -98,19 +102,21 @@ Return list ((title count)...)"
     (when next-contents
       (log-contents sheet date (get-const :log-name-next) next-contents))))
 
-(defun.ps log-contents (sheet date category contents)
-  (when (= (length contents) 0)
+(defun.ps log-contents (sheet date category c-info)
+  (unless c-info
     (return-from log-contents))
-  (let ((date-index (get-column-index-by-name
-                     sheet (get-const :column-name-date)))
-        (category-index (get-column-index-by-name
-                         sheet (get-const :column-name-category)))
-        (subcategory-index (get-column-index-by-name
-                            sheet (get-const :column-name-subcategory)))
-        (content-index (get-column-index-by-name
-                        sheet (get-const :column-name-content)))
-        (from-row (1+ (sheet.get-last-row)))
-        (len (length contents)))
+  (check-type c-info category-info)
+  (let* ((date-index (get-column-index-by-name
+                      sheet (get-const :column-name-date)))
+         (category-index (get-column-index-by-name
+                          sheet (get-const :column-name-category)))
+         (subcategory-index (get-column-index-by-name
+                             sheet (get-const :column-name-subcategory)))
+         (content-index (get-column-index-by-name
+                         sheet (get-const :column-name-content)))
+         (from-row (1+ (sheet.get-last-row)))
+         (contents (category-info-contents c-info))
+         (len (length contents)))
     (chain (sheet.get-range from-row date-index len 1)
            (set-values (make-same-element-list
                         len (lambda () (list date)))))
@@ -118,11 +124,17 @@ Return list ((title count)...)"
            (set-values (make-same-element-list
                         len (lambda () (list category)))))
     (chain (sheet.get-range from-row subcategory-index len 1)
-           (set-values (make-same-element-list
-                        len (lambda () (list subcategory)))))
+           (set-values (make-subcategory-element-list c-info)))
     (chain (sheet.get-range from-row content-index len 1)
            (set-values (mapcar (lambda (c) (list c))
                                contents)))))
+
+(defun.ps+ make-subcategory-element-list (c-info)
+  (let ((res (list)))
+    (do-subcategory ((name contents) c-info)
+      (dotimes (i (length contents))
+        (push (list name) res)))
+    (nreverse res)))
 
 (defun.ps+ make-same-element-list (len fn-make-element)
   (let ((res (list)))

@@ -76,11 +76,7 @@
                                              (get-const :category-do)))
            (next-content-text (format-content "次にすること" next-do-info))
            ;; aggregate
-           (today-do-contents (category-info-contents today-do-info))
-           (next-do-contents (category-info-contents next-do-info))
-           (aggregate-contents (aggregate today
-                                          today-do-contents
-                                          next-do-contents))
+           (aggregate-contents (aggregate today today-do-info next-do-info))
            (aggregate-category "集計")
            (aggregate-text "")
            ;; other
