@@ -5,6 +5,8 @@
   (:export :aggregate)
   (:import-from :cl-gas-nippo/src/const
                 :get-const)
+  (:import-from :cl-gas-nippo/config
+                :get-config)
   (:import-from :cl-gas-nippo/src/utils/config
                 :do-other-category
                 :get-title-of-category)
@@ -37,7 +39,7 @@
 (defun.ps aggregate-nippo-log-sheet (ss date)
   "Aggregate done and next works of this month.
 Return list ((title count)...)"
-  (let* ((sheet (get-sheet ss (get-const :sheet-name-nippo-log)))
+  (let* ((sheet (get-sheet ss (get-config :sheet-name-nippo-log)))
          (date-index (get-column-index-by-name
                       sheet (get-const :column-name-date)))
          (category-index (get-column-index-by-name
@@ -63,7 +65,7 @@ Return list ((title count)...)"
 (defun.ps aggregate-nippo-sheet (ss date)
   "Aggregate other categories of this month.
 Return list ((title count)...)"
-  (let* ((sheet (get-sheet ss (get-const :sheet-name-nippo)))
+  (let* ((sheet (get-sheet ss (get-config :sheet-name-nippo)))
          (date-index (get-column-index-by-name
                       sheet (get-const :column-name-date)))
          (category-index (get-column-index-by-name
@@ -89,10 +91,12 @@ Return list ((title count)...)"
 ;; --- logging ---- ;;
 
 (defun.ps+ log-today-and-next (ss date today-contents next-contents)
-  (let* ((sheet (get-sheet ss (get-const :sheet-name-nippo-log))))
+  (let* ((sheet (get-sheet ss (get-config :sheet-name-nippo-log))))
     (delete-date-logs sheet date)
-    (log-contents sheet date (get-const :log-name-done) today-contents)
-    (log-contents sheet date (get-const :log-name-next) next-contents)))
+    (when today-contents
+      (log-contents sheet date (get-const :log-name-done) today-contents))
+    (when next-contents
+      (log-contents sheet date (get-const :log-name-next) next-contents))))
 
 (defun.ps log-contents (sheet date category contents)
   (when (= (length contents) 0)
@@ -101,6 +105,8 @@ Return list ((title count)...)"
                      sheet (get-const :column-name-date)))
         (category-index (get-column-index-by-name
                          sheet (get-const :column-name-category)))
+        (subcategory-index (get-column-index-by-name
+                            sheet (get-const :column-name-subcategory)))
         (content-index (get-column-index-by-name
                         sheet (get-const :column-name-content)))
         (from-row (1+ (sheet.get-last-row)))
@@ -111,6 +117,9 @@ Return list ((title count)...)"
     (chain (sheet.get-range from-row category-index len 1)
            (set-values (make-same-element-list
                         len (lambda () (list category)))))
+    (chain (sheet.get-range from-row subcategory-index len 1)
+           (set-values (make-same-element-list
+                        len (lambda () (list subcategory)))))
     (chain (sheet.get-range from-row content-index len 1)
            (set-values (mapcar (lambda (c) (list c))
                                contents)))))

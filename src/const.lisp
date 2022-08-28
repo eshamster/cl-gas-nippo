@@ -7,10 +7,9 @@
 
 (defvar.ps+ *const-table*
     (let ((res (make-hash-table))
-          (lst '((:sheet-name-nippo "日報用")
-                 (:sheet-name-nippo-log "日報ログ")
-                 (:column-name-date "Date")
+          (lst '((:column-name-date "Date")
                  (:column-name-category "Category")
+                 (:column-name-subcategory "Subcategory")
                  (:column-name-content "Content")
                  (:category-do "やること")
                  (:log-name-done "やったこと")
