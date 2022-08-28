@@ -5,6 +5,12 @@
   (:export :aggregate)
   (:import-from :cl-gas-nippo/src/const
                 :get-const)
+  (:import-from :cl-gas-nippo/config
+                :get-config)
+  (:import-from :cl-gas-nippo/src/content-info
+                :category-info
+                :category-info-contents
+                :do-subcategory)
   (:import-from :cl-gas-nippo/src/utils/config
                 :do-other-category
                 :get-title-of-category)
@@ -37,7 +43,7 @@
 (defun.ps aggregate-nippo-log-sheet (ss date)
   "Aggregate done and next works of this month.
 Return list ((title count)...)"
-  (let* ((sheet (get-sheet ss (get-const :sheet-name-nippo-log)))
+  (let* ((sheet (get-sheet ss (get-config :sheet-name-nippo-log)))
          (date-index (get-column-index-by-name
                       sheet (get-const :column-name-date)))
          (category-index (get-column-index-by-name
@@ -63,7 +69,7 @@ Return list ((title count)...)"
 (defun.ps aggregate-nippo-sheet (ss date)
   "Aggregate other categories of this month.
 Return list ((title count)...)"
-  (let* ((sheet (get-sheet ss (get-const :sheet-name-nippo)))
+  (let* ((sheet (get-sheet ss (get-config :sheet-name-nippo)))
          (date-index (get-column-index-by-name
                       sheet (get-const :column-name-date)))
          (category-index (get-column-index-by-name
@@ -89,31 +95,46 @@ Return list ((title count)...)"
 ;; --- logging ---- ;;
 
 (defun.ps+ log-today-and-next (ss date today-contents next-contents)
-  (let* ((sheet (get-sheet ss (get-const :sheet-name-nippo-log))))
+  (let* ((sheet (get-sheet ss (get-config :sheet-name-nippo-log))))
     (delete-date-logs sheet date)
-    (log-contents sheet date (get-const :log-name-done) today-contents)
-    (log-contents sheet date (get-const :log-name-next) next-contents)))
+    (when today-contents
+      (log-contents sheet date (get-const :log-name-done) today-contents))
+    (when next-contents
+      (log-contents sheet date (get-const :log-name-next) next-contents))))
 
-(defun.ps log-contents (sheet date category contents)
-  (when (= (length contents) 0)
+(defun.ps log-contents (sheet date category c-info)
+  (unless c-info
     (return-from log-contents))
-  (let ((date-index (get-column-index-by-name
-                     sheet (get-const :column-name-date)))
-        (category-index (get-column-index-by-name
-                         sheet (get-const :column-name-category)))
-        (content-index (get-column-index-by-name
-                        sheet (get-const :column-name-content)))
-        (from-row (1+ (sheet.get-last-row)))
-        (len (length contents)))
+  (check-type c-info category-info)
+  (let* ((date-index (get-column-index-by-name
+                      sheet (get-const :column-name-date)))
+         (category-index (get-column-index-by-name
+                          sheet (get-const :column-name-category)))
+         (subcategory-index (get-column-index-by-name
+                             sheet (get-const :column-name-subcategory)))
+         (content-index (get-column-index-by-name
+                         sheet (get-const :column-name-content)))
+         (from-row (1+ (sheet.get-last-row)))
+         (contents (category-info-contents c-info))
+         (len (length contents)))
     (chain (sheet.get-range from-row date-index len 1)
            (set-values (make-same-element-list
                         len (lambda () (list date)))))
     (chain (sheet.get-range from-row category-index len 1)
            (set-values (make-same-element-list
                         len (lambda () (list category)))))
+    (chain (sheet.get-range from-row subcategory-index len 1)
+           (set-values (make-subcategory-element-list c-info)))
     (chain (sheet.get-range from-row content-index len 1)
            (set-values (mapcar (lambda (c) (list c))
                                contents)))))
+
+(defun.ps+ make-subcategory-element-list (c-info)
+  (let ((res (list)))
+    (do-subcategory ((name contents) c-info)
+      (dotimes (i (length contents))
+        (push (list name) res)))
+    (nreverse res)))
 
 (defun.ps+ make-same-element-list (len fn-make-element)
   (let ((res (list)))

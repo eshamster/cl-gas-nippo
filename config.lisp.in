@@ -3,11 +3,15 @@
         :parenscript
         :ps-experiment)
   (:export :get-config-list
-           :get-body-template))
+           :get-body-template
+           :get-const
+           :get-config))
 (in-package :cl-gas-nippo/config)
 
 (defvar.ps+ *config-list*
     '((:spreadsheet-id "XXXX")
+      (:sheet-name-nippo "日報用")
+      (:sheet-name-nippo-log "日報ログ")
       (:to "to-example@example.com")
       (:cc "cc-example@example.com")
       (:bcc "bcc-example@example.com")

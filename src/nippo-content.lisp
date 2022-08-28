@@ -5,8 +5,16 @@
   (:export :make-content)
   (:import-from :cl-gas-nippo/src/aggregate
                 :aggregate)
+  (:import-from :cl-gas-nippo/config
+                :get-config)
   (:import-from :cl-gas-nippo/src/const
                 :get-const)
+  (:import-from :cl-gas-nippo/src/content-info
+                :make-category-info-list
+                :find-category-info
+                :do-subcategory
+                :category-info-contents
+                :push-content-row)
   (:import-from :cl-gas-nippo/src/utils/config
                 :check-if-other-category
                 :get-title-of-category
@@ -30,46 +38,66 @@
 
 (defun.ps make-content (now)
   (let* ((sheet (get-sheet (get-spreadhsheet)
-                           (get-const :sheet-name-nippo)))
+                           (get-config :sheet-name-nippo)))
          (date-index (get-column-index-by-name
                       sheet (get-const :column-name-date)))
          (category-index (get-column-index-by-name
                           sheet (get-const :column-name-category)))
+         (subcategory-index (get-column-index-by-name
+                             sheet (get-const :column-name-subcategory)))
          (content-index (get-column-index-by-name
                          sheet (get-const :column-name-content)))
          (last-row (sheet.get-last-row))
-         (today-contents (list))
-         (next-contents (list))
-         (other-contents-table (make-hash-table))
+         (today-category-info-list (make-category-info-list))
+         (next-category-info-list (make-category-info-list))
          (today (get-today-date)))
     (multiple-value-bind (start-row end-row)
         (find-today-and-next-rows sheet today date-index)
       (loop :for row :from start-row :to end-row :do
-           (let ((date-val (get-value-at sheet row date-index))
-                 (category-val (get-value-at sheet row category-index))
-                 (content-val (get-value-at sheet row content-index)))
-             (if (string= category-val (get-const :category-do))
-                 (cond ((date= date-val today)
-                        (today-contents.push content-val))
-                       ;; Note: Range from start-row to end-row includes only today and next date.
-                       ;; So if a date is not today, it is next date.
-                       (t (next-contents.push content-val)))
-                 (when (date= date-val today)
-                   (check-if-other-category category-val)
-                   (let ((lst (gethash category-val other-contents-table)))
-                     (unless lst (setf lst (list)))
-                     (lst.push content-val)
-                     (setf (gethash category-val other-contents-table) lst)))))))
-    (let ((today-content-text (format-content "やったこと" today-contents))
-          (next-content-text (format-content "次にすること" next-contents))
-          (aggregate-text (format-content "集計" (aggregate today today-contents next-contents)))
-          (other-text ""))
+           (let* ((date-val (get-value-at sheet row date-index))
+                  (category-val (get-value-at sheet row category-index))
+                  (subcategory-val (get-value-at sheet row subcategory-index))
+                  (content-val (get-value-at sheet row content-index))
+                  ;; Note: Range from start-row to end-row includes only today and next date.
+                  ;; So if a date is not today, it is next date.
+                  (target-list (if (date= date-val today)
+                                   today-category-info-list
+                                   next-category-info-list)))
+             (push-content-row :category-info-list target-list
+                               :category category-val
+                               :subcategory subcategory-val
+                               :content content-val))))
+    (let* ( ; today do
+           (today-do-info (find-category-info today-category-info-list
+                                              (get-const :category-do)))
+           (today-content-text (format-content "やったこと" today-do-info))
+           ;; next day do
+           (next-do-info (find-category-info next-category-info-list
+                                             (get-const :category-do)))
+           (next-content-text (format-content "次にすること" next-do-info))
+           ;; aggregate
+           (aggregate-contents (aggregate today today-do-info next-do-info))
+           (aggregate-category "集計")
+           (aggregate-text "")
+           ;; other
+           (other-text ""))
+      ;; format aggregate
+      (dolist (c aggregate-contents)
+        (push-content-row :category-info-list today-category-info-list
+                          :category aggregate-category
+                          :subcategory ""
+                          :content c))
+      (setf aggregate-text
+            (format-content aggregate-category
+                            (find-category-info today-category-info-list
+                                                aggregate-category)))
+      ;; format others
       (do-other-category (c)
-        (let ((contents (gethash c other-contents-table)))
-          (when contents
+        (let ((category-info (find-category-info today-category-info-list c)))
+          (when category-info
             (setf other-text
                   (+ other-text (format-content
-                                 (get-title-of-category c) contents))))))
+                                 (get-title-of-category c) category-info))))))
       (+ aggregate-text today-content-text next-content-text other-text))))
 
 (defun.ps find-today-and-next-rows (sheet today-date date-index)
@@ -90,13 +118,18 @@
               (t (setf start-row row)))))
     (values start-row end-row)))
 
-(defun.ps format-content (title contents)
-  (when (= contents.length 0)
+(defun.ps format-content (title category-info)
+  (unless category-info
     (return-from format-content ""))
   (let* ((nl #\Newline)
          (res (+ "【" title "】" nl)))
-    (dolist (c contents)
-      (setf res (+ res "- "
-                   (c.replace (regex "/\\n/g") (+ nl "  "))
-                   nl)))
+    (do-subcategory ((name contents) category-info)
+      (let* ((has-name (not (string= name "")))
+             (offset (if has-name "    " "")))
+        (when has-name
+          (setf res (+ res "- " name nl)))
+        (dolist (c contents)
+          (setf res (+ res offset "- "
+                       (c.replace (regex "/\\n/g") (+ nl offset "  "))
+                       nl)))))
     (+ res nl)))
