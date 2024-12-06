@@ -35,5 +35,11 @@
 (defun.ps+ get-config-list ()
   *config-list*)
 
+(defun.ps+ get-config (key)
+  ;; Note: There is no 'assoc' in ps
+  (dolist (pair (get-config-list))
+    (when (eq (car pair) key)
+      (return-from get-config (cadr pair)))))
+
 (defun.ps+ get-body-template ()
   *body-template*)
